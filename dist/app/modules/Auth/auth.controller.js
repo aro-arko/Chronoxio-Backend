@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authController = void 0;
+const AppError_1 = __importDefault(require("../../errors/AppError"));
 const catchAsync_1 = __importDefault(require("../../utils/catchAsync"));
 const sendResponse_1 = __importDefault(require("../../utils/sendResponse"));
 const auth_service_1 = require("./auth.service");
@@ -49,8 +50,34 @@ const changePassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0,
         data: result,
     });
 }));
+const forgotPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const email = req.body.email;
+    const result = yield auth_service_1.authServices.forgotPassword(email);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Password reset link sent successfully",
+        data: result,
+    });
+}));
+// reset password
+const resetPassword = (0, catchAsync_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const token = req.headers.authorization;
+    if (!token) {
+        throw new AppError_1.default(http_status_1.default.BAD_REQUEST, "Something went wrong!");
+    }
+    const result = yield auth_service_1.authServices.resetPassword(req.body, token);
+    (0, sendResponse_1.default)(res, {
+        statusCode: http_status_1.default.OK,
+        success: true,
+        message: "Password reset successfully",
+        data: result,
+    });
+}));
 exports.authController = {
     createUser,
     loginUser,
     changePassword,
+    forgotPassword,
+    resetPassword,
 };

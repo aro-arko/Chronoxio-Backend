@@ -45,9 +45,44 @@ const changePasswordValidation = z.object({
       }),
   }),
 });
+const forgotPasswordValidationSchema = z.object({
+  body: z.object({
+    email: z
+      .string({
+        error: "Email must be a string",
+      })
+      .email({
+        message: "Invalid email format",
+      }),
+  }),
+});
+
+const resetPasswordValidationSchema = z.object({
+  body: z.object({
+    email: z
+      .string({
+        error: "Email must be a string",
+      })
+      .email({
+        message: "Invalid email format",
+      }),
+    newPassword: z
+      .string({
+        error: "New password must be a string",
+      })
+      .min(6, {
+        message: "New password must be at least 6 characters long",
+      })
+      .max(100, {
+        message: "New password must be at most 32 characters long",
+      }),
+  }),
+});
 
 export const authValidation = {
   registrationValidation,
   loginValidation,
   changePasswordValidation,
+  forgotPasswordValidationSchema,
+  resetPasswordValidationSchema,
 };

@@ -14,4 +14,6 @@ const router = express_1.default.Router();
 router.post("/register", (0, validateRequest_1.default)(auth_validation_1.authValidation.registrationValidation), auth_controller_1.authController.createUser);
 router.post("/login", (0, validateRequest_1.default)(auth_validation_1.authValidation.loginValidation), auth_controller_1.authController.loginUser);
 router.patch("/change-password", (0, auth_1.default)(user_constant_1.USER_ROLE.user, user_constant_1.USER_ROLE.admin), (0, validateRequest_1.default)(auth_validation_1.authValidation.changePasswordValidation), auth_controller_1.authController.changePassword);
+router.post("/forgot-password", (0, validateRequest_1.default)(auth_validation_1.authValidation.forgotPasswordValidationSchema), auth_controller_1.authController.forgotPassword);
+router.post("/reset-password", (0, validateRequest_1.default)(auth_validation_1.authValidation.resetPasswordValidationSchema), auth_controller_1.authController.resetPassword);
 exports.authRoutes = router;

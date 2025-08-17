@@ -45,8 +45,42 @@ const changePasswordValidation = zod_1.z.object({
         }),
     }),
 });
+const forgotPasswordValidationSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        email: zod_1.z
+            .string({
+            error: "Email must be a string",
+        })
+            .email({
+            message: "Invalid email format",
+        }),
+    }),
+});
+const resetPasswordValidationSchema = zod_1.z.object({
+    body: zod_1.z.object({
+        email: zod_1.z
+            .string({
+            error: "Email must be a string",
+        })
+            .email({
+            message: "Invalid email format",
+        }),
+        newPassword: zod_1.z
+            .string({
+            error: "New password must be a string",
+        })
+            .min(6, {
+            message: "New password must be at least 6 characters long",
+        })
+            .max(100, {
+            message: "New password must be at most 32 characters long",
+        }),
+    }),
+});
 exports.authValidation = {
     registrationValidation,
     loginValidation,
     changePasswordValidation,
+    forgotPasswordValidationSchema,
+    resetPasswordValidationSchema,
 };

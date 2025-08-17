@@ -4,9 +4,9 @@ import User from "../User/user.model";
 import { Task } from "./task.model";
 import mongoose from "mongoose";
 import QueryBuilder from "../../builder/QueryBuilder";
-import moment from "moment";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
+import moment from "moment-timezone";
 
 const createTask = async (currentUser: JwtPayload, payLoad: TTask) => {
   const { email } = currentUser;
@@ -182,7 +182,6 @@ const getAllTasks = async (
     .search(["title"])
     .filter()
     .sort()
-    .paginate()
     .fields()
     .modelQuery.exec();
 
@@ -208,21 +207,29 @@ const getWeeklyReport = async (currentUser: JwtPayload) => {
     category: "Self Improvement",
   });
 
-  // Prepare report for each day of the week
   const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  // Always start from Malaysia Monday
+  const startOfWeekMY = moment(startOfWeek)
+    .tz("Asia/Kuala_Lumpur")
+    .startOf("isoWeek"); // isoWeek starts Monday
+
   const report = daysOfWeek.map((day, idx) => {
-    const dayStart = moment(startOfWeek).add(idx, "days").startOf("day");
+    const dayStart = moment(startOfWeekMY).add(idx, "days").startOf("day");
+
     const dayEnd = moment(dayStart).endOf("day");
-    const tasksForDay = tasks.filter(
-      (task) =>
-        moment(task.createdAt).isSameOrAfter(dayStart) &&
-        moment(task.createdAt).isSameOrBefore(dayEnd)
+
+    const tasksForDay = tasks.filter((task) =>
+      moment(task.createdAt)
+        .tz("Asia/Kuala_Lumpur")
+        .isBetween(dayStart, dayEnd, null, "[]")
     );
-    // Sum timeSpent in minutes
+
     const totalMinutes = tasksForDay.reduce(
       (sum, task) => sum + Math.floor((task.timeSpent || 0) / 60),
       0
     );
+
     return { name: day, value: totalMinutes };
   });
 

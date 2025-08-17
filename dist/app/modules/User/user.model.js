@@ -50,11 +50,24 @@ const userSchema = new mongoose_1.Schema({
         default: "active",
     },
 }, { timestamps: true, versionKey: false });
-// password hashing middleware
+// Middleware to update the updatedAt field before saving
 userSchema.pre("save", function (next) {
     return __awaiter(this, void 0, void 0, function* () {
         if (this.isModified("password")) {
             this.password = yield bcrypt_1.default.hash(this.password, Number(config_1.default.bcrypt_salt_rounds));
+        }
+        next();
+    });
+});
+// Middleware to update the updatedAt field before updating
+userSchema.pre("findOneAndUpdate", function (next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const update = this.getUpdate();
+        if (update && typeof update === "object" && !Array.isArray(update)) {
+            if (update.password) {
+                const hashed = yield bcrypt_1.default.hash(update.password, Number(config_1.default.bcrypt_salt_rounds));
+                update.password = hashed;
+            }
         }
         next();
     });

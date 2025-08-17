@@ -17,9 +17,9 @@ const user_model_1 = __importDefault(require("../User/user.model"));
 const task_model_1 = require("./task.model");
 const mongoose_1 = __importDefault(require("mongoose"));
 const QueryBuilder_1 = __importDefault(require("../../builder/QueryBuilder"));
-const moment_1 = __importDefault(require("moment"));
 const AppError_1 = __importDefault(require("../../errors/AppError"));
 const http_status_1 = __importDefault(require("http-status"));
+const moment_timezone_1 = __importDefault(require("moment-timezone"));
 const createTask = (currentUser, payLoad) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = currentUser;
     // find user
@@ -120,8 +120,8 @@ const deleteTask = (taskId, currentUser) => __awaiter(void 0, void 0, void 0, fu
             throw new Error("Task not found or you don't have permission");
         // If task is completed, only allow deletion after 7 days from updatedAt
         if (task.status === "completed") {
-            const now = (0, moment_1.default)();
-            const updatedAt = (0, moment_1.default)(task.updatedAt);
+            const now = (0, moment_timezone_1.default)();
+            const updatedAt = (0, moment_timezone_1.default)(task.updatedAt);
             if (now.diff(updatedAt, "days") < 7) {
                 throw new AppError_1.default(http_status_1.default.FORBIDDEN, "Completed tasks can only be deleted after 7 days for reporting purposes.");
             }
@@ -155,7 +155,6 @@ const getAllTasks = (currentUser, query) => __awaiter(void 0, void 0, void 0, fu
         .search(["title"])
         .filter()
         .sort()
-        .paginate()
         .fields()
         .modelQuery.exec();
     return tasks;
@@ -168,22 +167,25 @@ const getWeeklyReport = (currentUser) => __awaiter(void 0, void 0, void 0, funct
     if (!user)
         throw new Error("User not found");
     // Get tasks for the week
-    const startOfWeek = (0, moment_1.default)().startOf("week");
-    const endOfWeek = (0, moment_1.default)().endOf("week");
+    const startOfWeek = (0, moment_timezone_1.default)().startOf("week");
+    const endOfWeek = (0, moment_timezone_1.default)().endOf("week");
     const tasks = yield task_model_1.Task.find({
         userId: user._id,
         createdAt: { $gte: startOfWeek, $lte: endOfWeek },
         status: "completed",
         category: "Self Improvement",
     });
-    // Prepare report for each day of the week
     const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    // Always start from Malaysia Monday
+    const startOfWeekMY = (0, moment_timezone_1.default)(startOfWeek)
+        .tz("Asia/Kuala_Lumpur")
+        .startOf("isoWeek"); // isoWeek starts Monday
     const report = daysOfWeek.map((day, idx) => {
-        const dayStart = (0, moment_1.default)(startOfWeek).add(idx, "days").startOf("day");
-        const dayEnd = (0, moment_1.default)(dayStart).endOf("day");
-        const tasksForDay = tasks.filter((task) => (0, moment_1.default)(task.createdAt).isSameOrAfter(dayStart) &&
-            (0, moment_1.default)(task.createdAt).isSameOrBefore(dayEnd));
-        // Sum timeSpent in minutes
+        const dayStart = (0, moment_timezone_1.default)(startOfWeekMY).add(idx, "days").startOf("day");
+        const dayEnd = (0, moment_timezone_1.default)(dayStart).endOf("day");
+        const tasksForDay = tasks.filter((task) => (0, moment_timezone_1.default)(task.createdAt)
+            .tz("Asia/Kuala_Lumpur")
+            .isBetween(dayStart, dayEnd, null, "[]"));
         const totalMinutes = tasksForDay.reduce((sum, task) => sum + Math.floor((task.timeSpent || 0) / 60), 0);
         return { name: day, value: totalMinutes };
     });
